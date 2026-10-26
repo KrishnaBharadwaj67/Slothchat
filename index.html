@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SlothChat Digest — Stop Reading. Start Sleeping. 🦥</title>
+  <meta name="description" content="Drop your chaotic group chat. Get the TL;DR. 100% local AI. $0 cloud cost. Maximum laziness.">
+
+  <!-- Google Fonts: Space Grotesk & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Space Grotesk"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          },
+          colors: {
+            midnight: '#0b0f19',
+            'midnight-light': '#111827',
+            'midnight-card': '#1a2332',
+            amber: {
+              DEFAULT: '#f59e0b',
+              glow: 'rgba(245,158,11,0.15)'
+            },
+            emerald: {
+              DEFAULT: '#10b981',
+              glow: 'rgba(16,185,129,0.15)'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="bg-midnight text-slate-100 font-sans min-h-screen flex flex-col relative selection:bg-amber-500/30 selection:text-amber-200">
+
+  <!-- Ambient Glow Background Effects -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10" aria-hidden="true">
+    <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-amber-500/10 blur-[130px] rounded-full"></div>
+    <div class="absolute top-1/3 -left-48 w-[400px] h-[400px] bg-emerald-500/5 blur-[120px] rounded-full"></div>
+    <div class="absolute bottom-10 -right-48 w-[500px] h-[500px] bg-amber-500/5 blur-[140px] rounded-full"></div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 right-0 z-40 bg-midnight/80 backdrop-blur-md border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+      
+      <!-- Brand Logo / Title -->
+      <div class="flex items-center space-x-3 select-none">
+        <span class="text-3xl" role="img" aria-label="Sloth">🦥</span>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="text-base sm:text-lg font-bold text-white tracking-tight">SlothChat Digest</span>
+            <span class="hidden sm:inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono font-medium">100% Local</span>
+          </div>
+          <p class="text-xs text-slate-400 leading-tight">TL;DR My Friends</p>
+        </div>
+      </div>
+
+      <!-- Model Selector & Refresh Button -->
+      <div class="flex items-center space-x-2">
+        <div class="relative">
+          <select id="model-select" class="appearance-none bg-midnight-card border border-white/10 text-slate-200 text-xs sm:text-sm rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:border-amber-500 transition-colors cursor-pointer font-mono shadow-sm">
+            <option value="llama3.2:latest">llama3.2:latest</option>
+            <option value="gemma2:2b">gemma2:2b</option>
+            <option value="qwen2.5:3b">qwen2.5:3b</option>
+            <option value="mistral:latest">mistral:latest</option>
+            <option value="phi3:mini">phi3:mini</option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+          </div>
+        </div>
+        <button id="refresh-models-btn" type="button" title="Fetch models from Ollama" class="p-2 rounded-lg bg-midnight-card border border-white/10 text-slate-400 hover:text-amber-400 hover:border-amber-500/40 transition-all flex items-center justify-center cursor-pointer">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <!-- Connection Status Badge -->
+      <div id="connection-badge" class="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-midnight-card border border-white/10 text-xs shadow-sm">
+        <span id="connection-dot" class="status-dot connected"></span>
+        <span id="connection-text" class="text-slate-300 font-medium">Connected</span>
+      </div>
+
+    </div>
+  </nav>
+
+  <!-- Main Content Wrapper -->
+  <main class="flex-grow pt-24 sm:pt-28 pb-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full">
+
+    <!-- Hero Section -->
+    <header class="text-center pt-4 pb-4">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium mb-4 shadow-sm">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+        <span>Maximum Laziness • Zero Cloud Cost</span>
+      </div>
+      <h1 class="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white mb-3">
+        Stop Reading. <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500">Start Sleeping.</span> 🦥
+      </h1>
+      <p class="text-slate-400 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto leading-relaxed">
+        Drop your chaotic group chat. Get the TL;DR. 100% local AI. $0 cloud cost. Maximum laziness.
+      </p>
+
+      <!-- Preset Buttons Row -->
+      <div class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3.5 mt-6 mb-2">
+        <button id="preset-btn-1" type="button" class="preset-btn glass-card flex items-center space-x-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-slate-200 hover:text-white cursor-pointer">
+          <span class="text-base sm:text-lg">🎮</span>
+          <span>3 AM Gaming Server</span>
+        </button>
+        <button id="preset-btn-2" type="button" class="preset-btn glass-card flex items-center space-x-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-slate-200 hover:text-white cursor-pointer">
+          <span class="text-base sm:text-lg">📚</span>
+          <span>College Exam Panic</span>
+        </button>
+        <button id="preset-btn-3" type="button" class="preset-btn glass-card flex items-center space-x-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-slate-200 hover:text-white cursor-pointer">
+          <span class="text-base sm:text-lg">🏠</span>
+          <span>Roommate Cold War</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Input Section -->
+    <section id="input-section" class="w-full mt-4">
+      <div class="glass-card shadow-2xl relative overflow-hidden">
+        
+        <!-- File Drop Zone Area -->
+        <div id="file-drop-zone" class="file-drop-zone rounded-xl p-3 sm:p-4 bg-midnight/60 flex flex-col gap-2">
+          
+          <!-- Drop Zone Info Row -->
+          <div class="flex items-center justify-between text-xs text-slate-400 pb-1">
+            <div class="flex items-center space-x-2 overflow-hidden text-ellipsis whitespace-nowrap">
+              <i data-lucide="file-text" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
+              <span id="file-info" class="text-slate-400 font-mono text-xs truncate">Drop .txt / chat export here, or paste directly</span>
+            </div>
+            <span id="char-count" class="font-mono text-xs text-slate-400 flex-shrink-0 ml-2">0 characters</span>
+          </div>
+
+          <!-- Chat Textarea -->
+          <textarea id="chat-textarea" rows="8" placeholder="Paste your chaotic group chat here..." class="w-full bg-midnight/90 text-slate-200 font-mono text-xs sm:text-sm rounded-lg p-3.5 border border-white/10 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all placeholder:text-slate-600 resize-y leading-relaxed"></textarea>
+        </div>
+
+        <!-- Target Username Row -->
+        <div class="mt-4 pt-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-white/5">
+          <div class="flex items-center space-x-2">
+            <label for="target-username" class="text-xs font-medium text-slate-300 flex items-center gap-1.5 whitespace-nowrap">
+              <i data-lucide="at-sign" class="w-3.5 h-3.5 text-amber-400"></i>
+              Target Username:
+            </label>
+            <input type="text" id="target-username" value="@YourMajesty" placeholder="@YourMajesty" class="bg-midnight border border-white/10 rounded-lg px-3 py-1.5 text-xs sm:text-sm text-amber-300 font-mono focus:outline-none focus:border-amber-500 transition-colors w-44 sm:w-52" />
+          </div>
+          <div class="flex items-center gap-1.5 text-xs text-slate-400">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span>No data leaves your local machine</span>
+          </div>
+        </div>
+
+        <!-- Main Digest CTA Button -->
+        <div class="mt-5">
+          <button id="digest-btn" type="button" class="digest-btn-glow w-full py-3.5 px-6 rounded-xl font-bold text-slate-950 text-base sm:text-lg flex items-center justify-center space-x-2.5 transition-all cursor-pointer">
+            <i data-lucide="zap" class="w-5 h-5 fill-slate-950"></i>
+            <span>Wake Up & Digest (Stay Lazy) 🦥</span>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Loading Section (Hidden by Default) -->
+    <section id="loading-section" class="hidden w-full max-w-2xl mx-auto my-12 text-center fade-in">
+      <div class="glass-card flex flex-col items-center justify-center p-8 sm:p-12 relative overflow-hidden">
+        <div class="text-6xl sm:text-7xl mb-4 sloth-pulse select-none" role="img" aria-label="Sloth">🦥</div>
+        <h2 class="text-xl sm:text-2xl font-bold text-white mb-2">Your Sloth AI is waking up...</h2>
+        <p id="loading-status" class="text-sm text-amber-400 font-mono mb-6 typing-text inline-block px-1">Reading chats at minimum required speed...</p>
+        <div class="shimmer-bar max-w-md w-full"></div>
+        <p class="text-xs text-slate-500 mt-5 italic">Tip: Sloths expend 90% less energy than average mammals. Your CPU is handling the rest.</p>
+      </div>
+    </section>
+
+    <!-- Output Dashboard Section (Hidden by Default) -->
+    <section id="output-section" class="hidden w-full mt-6 space-y-6 fade-in">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+        <!-- Card 1 — Sloth Summary -->
+        <div class="glass-card slide-up slide-up-1 md:col-span-2 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center space-x-2.5 mb-3">
+              <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                <i data-lucide="scroll" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h2 class="text-base sm:text-lg font-bold text-white">The 2-Line Sloth Summary</h2>
+                <p class="text-xs text-slate-400">Everything that happened without the headache</p>
+              </div>
+            </div>
+            <div class="p-4 rounded-xl bg-midnight/70 border border-white/5 border-l-4 border-l-amber-500 mt-2">
+              <p id="summary-text" class="text-sm sm:text-base text-slate-200 leading-relaxed font-sans"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2 — Ping Radar -->
+        <div class="glass-card slide-up slide-up-2 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center space-x-2.5 mb-3">
+              <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <i data-lucide="bell-ring" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h2 class="text-base sm:text-lg font-bold text-white">Did Anyone Ping Me?</h2>
+                <p class="text-xs text-slate-400">Direct tags & name mentions</p>
+              </div>
+            </div>
+            <div class="flex flex-col gap-3 mt-2">
+              <div id="ping-found" class="flex items-center space-x-2 px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs sm:text-sm font-medium">
+                <i data-lucide="check-circle-2" class="w-4 h-4 flex-shrink-0"></i>
+                <span>No direct tags or urgent requests found!</span>
+              </div>
+              <p id="ping-details" class="text-xs sm:text-sm text-slate-400 leading-relaxed font-mono bg-midnight/50 p-3 rounded-lg border border-white/5"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3 — Drama Thermometer -->
+        <div class="glass-card slide-up slide-up-3 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center space-x-2.5 mb-3">
+              <div class="p-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">
+                <i data-lucide="flame" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h2 class="text-base sm:text-lg font-bold text-white">Drama & Chaos Thermometer</h2>
+                <p class="text-xs text-slate-400">Toxicity & argument intensity</p>
+              </div>
+            </div>
+            <div class="space-y-3 mt-2">
+              <div class="flex items-baseline justify-between">
+                <span class="text-xs uppercase tracking-wider text-slate-400 font-medium">Chaos Level</span>
+                <span class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-red-400 font-mono">
+                  <span id="drama-percentage">0</span>%
+                </span>
+              </div>
+              <div class="drama-bar-track">
+                <div id="drama-bar-fill" class="drama-bar-fill" style="width: 0%;"></div>
+              </div>
+              <p id="drama-description" class="text-xs sm:text-sm text-slate-400 leading-relaxed"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4 — Lazy Replies -->
+        <div class="glass-card slide-up slide-up-4 md:col-span-2">
+          <div class="flex items-center space-x-2.5 mb-4">
+            <div class="p-2 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">
+              <i data-lucide="message-circle" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h2 class="text-base sm:text-lg font-bold text-white">Pretend I Read It</h2>
+              <p class="text-xs text-slate-400">One-click responses to maintain social presence</p>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <!-- The Ghost Reply -->
+            <div class="mini-card p-3 sm:p-4 rounded-xl">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                  <span class="text-base">👻</span> The Ghost
+                </span>
+                <button id="copy-ghost" type="button" title="Copy reply" class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-md text-xs font-mono text-slate-300 hover:text-amber-400 bg-white/5 hover:bg-amber-500/10 border border-white/10 hover:border-amber-500/30 transition-all cursor-pointer">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                  <span>Copy</span>
+                </button>
+              </div>
+              <div class="bg-midnight/80 rounded-lg p-2.5 border border-white/5">
+                <p id="reply-ghost" class="text-xs sm:text-sm text-slate-200 font-mono select-all italic"></p>
+              </div>
+            </div>
+
+            <!-- The Diplomat Reply -->
+            <div class="mini-card p-3 sm:p-4 rounded-xl">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                  <span class="text-base">🕊️</span> The Diplomat
+                </span>
+                <button id="copy-diplomat" type="button" title="Copy reply" class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-md text-xs font-mono text-slate-300 hover:text-amber-400 bg-white/5 hover:bg-amber-500/10 border border-white/10 hover:border-amber-500/30 transition-all cursor-pointer">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                  <span>Copy</span>
+                </button>
+              </div>
+              <div class="bg-midnight/80 rounded-lg p-2.5 border border-white/5">
+                <p id="reply-diplomat" class="text-xs sm:text-sm text-slate-200 font-mono select-all italic"></p>
+              </div>
+            </div>
+
+            <!-- The Sloth King Reply -->
+            <div class="mini-card p-3 sm:p-4 rounded-xl">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                  <span class="text-base">🦥</span> The Sloth King
+                </span>
+                <button id="copy-sloth" type="button" title="Copy reply" class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-md text-xs font-mono text-slate-300 hover:text-amber-400 bg-white/5 hover:bg-amber-500/10 border border-white/10 hover:border-amber-500/30 transition-all cursor-pointer">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                  <span>Copy</span>
+                </button>
+              </div>
+              <div class="bg-midnight/80 rounded-lg p-2.5 border border-white/5">
+                <p id="reply-sloth" class="text-xs sm:text-sm text-slate-200 font-mono select-all italic"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5 — ROI Metrics -->
+        <div class="glass-card slide-up slide-up-5 col-span-full">
+          <div class="flex items-center space-x-2.5 mb-4">
+            <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <i data-lucide="trophy" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h2 class="text-base sm:text-lg font-bold text-white">Laziness ROI</h2>
+              <p class="text-xs text-slate-400">Total mental energy & bandwidth conserved</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <!-- Stat: Messages Skipped -->
+            <div class="stat-card mini-card p-4 rounded-xl flex flex-col items-center justify-center text-center">
+              <div class="text-xl mb-1">📨</div>
+              <span id="stat-messages" class="text-2xl sm:text-3xl font-bold font-mono text-amber-400">0</span>
+              <span class="text-xs text-slate-400 font-medium mt-1">Messages Skipped</span>
+            </div>
+
+            <!-- Stat: Words Not Read -->
+            <div class="stat-card mini-card p-4 rounded-xl flex flex-col items-center justify-center text-center">
+              <div class="text-xl mb-1">📝</div>
+              <span id="stat-words" class="text-2xl sm:text-3xl font-bold font-mono text-amber-300">0</span>
+              <span class="text-xs text-slate-400 font-medium mt-1">Words Not Read</span>
+            </div>
+
+            <!-- Stat: Calories Saved -->
+            <div class="stat-card mini-card p-4 rounded-xl flex flex-col items-center justify-center text-center">
+              <div class="text-xl mb-1">🔋</div>
+              <span id="stat-calories" class="text-2xl sm:text-3xl font-bold font-mono text-emerald-400">0 kcal</span>
+              <span class="text-xs text-slate-400 font-medium mt-1">Sloth Calories Saved</span>
+            </div>
+
+            <!-- Stat: Cloud Cost -->
+            <div class="stat-card mini-card p-4 rounded-xl flex flex-col items-center justify-center text-center">
+              <div class="text-xl mb-1">💰</div>
+              <span id="stat-cost" class="text-2xl sm:text-3xl font-bold font-mono text-emerald-400">$0.00</span>
+              <span class="text-xs text-slate-400 font-medium mt-1">Cloud API Cost</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Action Button: Digest Another Chat -->
+      <div class="text-center pt-4 pb-2">
+        <button id="new-digest-btn" type="button" class="inline-flex items-center space-x-2 px-6 py-3 rounded-xl font-medium text-slate-200 bg-midnight-card hover:bg-slate-800 border border-white/10 hover:border-amber-500/40 transition-all transform hover:scale-105 cursor-pointer">
+          <i data-lucide="rotate-ccw" class="w-4 h-4 text-amber-400"></i>
+          <span>Digest Another Chat</span>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="py-6 border-t border-white/5 text-center text-xs text-slate-500 mt-auto">
+    <div class="max-w-7xl mx-auto px-4">
+      <p>Built with 🦥 laziness &amp; open-source AI • Hacktoberfest 2026 • 100% Local, $0 Cloud Cost</p>
+    </div>
+  </footer>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 max-w-sm pointer-events-none"></div>
+
+  <!-- Scripts -->
+  <script src="app.js"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+
+</body>
+</html>
